@@ -37,7 +37,7 @@ function run(){
 }
 
 function makeScene(){
-  var cubes = fillCubes(1000),
+  var cubes = fillCubes(100),
       light = addLight(new vector3(0, 0, 0), 0xff0000, 1000);
 
   registerCallBacks(cubes, light);
@@ -48,13 +48,9 @@ function makeScene(){
 function registerCallBacks(cubes, light){
   Meteor.VR.addCallBack(function(){
     cubes.forEach(function(cube){
-      cube.mesh.rotation.x += 0.1;
-      cube.mesh.position = makeTriangle(cube.mesh.position, Meteor.VR.camera.position);
+      cube.rotation.x += 0.1;
+      cube = accelerate(cube, 0.01);
     });
-
-    Meteor.VR.camera.position.z -= 0.04;
-    Meteor.VR.camera.position.x -= 0.03;
-    Meteor.VR.camera.position.y -= 0.04;
 
     light.position = Meteor.VR.camera.position;
   });
@@ -69,11 +65,13 @@ function fillCubes(l){
         material = new THREE.MeshNormalMaterial(),
         cube = {};
 
-    cube.mesh = new THREE.Mesh(geometry, material),
-    cube.acceleration = new vector3(0, 0, 0);
+    cube = new THREE.Mesh(geometry, material),
+    cube.acceleration = new vector3((Math.random()*2)-1,
+                                    (Math.random()*2)-1,
+                                    (Math.random()*2)-1);
 
-    cube.mesh.position.set(getCoord(), getCoord(), getCoord());
-    Meteor.VR.scene.add(cube.mesh);
+    cube.position.set(getCoord(), getCoord(), getCoord());
+    Meteor.VR.scene.add(cube);
     cubes.push(cube);
   }
 
@@ -92,12 +90,26 @@ function addLight(pos, color, intensity){
 }
 
 function accelerate(obj, speed){
-  var a = obj.accleration,
-      p = obj.position;
+  console.log(obj);
+  var a = obj.acceleration,
+      p = obj.position,
+      multiplier = 1;
 
-  a.x > 0 ? p.x += speed : p.x -= speed;
-  a.y > 0 ? p.y += speed : p.y -= speed;
-  a.z > 0 ? p.z += speed : p.z -= speed;
+  if(a.x !== 0){
+    a.x < 0 ? multiplier = -1 : multiplier = 1;
+    p.x += speed * multiplier;
+    a.x += speed * multiplier;
+  }
+  if(a.y !== 0){
+    a.y < 0 ? multiplier = -1 : multiplier = 1;
+    p.y += speed * multiplier;
+    a.y += speed * multiplier;
+  }
+  if(a.z !== 0){
+    a.z < 0 ? multiplier = -1 : multiplier = 1;
+    p.z += speed * multiplier;
+    a.z += speed * multiplier;
+  }
 
   return obj;
 }
